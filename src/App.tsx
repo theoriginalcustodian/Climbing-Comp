@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Play,
   Pause,
@@ -19,6 +20,7 @@ import {
   Plus,
   Minus,
   Settings,
+  Smartphone,
   Flame,
   Award,
   Layers,
@@ -71,7 +73,7 @@ export default function App() {
   }
   // Navigation & View mode
   const [activeTab, setActiveTab] = useState<'timer' | 'public' | 'results' | 'competitors' | 'settings' | 'forms'>('timer');
-  const [settingsSubTab, setSettingsSubTab] = useState<'timer' | 'problems' | 'info' | 'rules' | 'skins'>('timer');
+  const [settingsSubTab, setSettingsSubTab] = useState<'timer' | 'problems' | 'info' | 'rules' | 'skins' | 'judges'>('timer');
   const [showCompetitorInTimer, setShowCompetitorInTimer] = useState(true);
   const [bgTheme, setBgTheme] = useState<'pachamama' | 'cijel'>('pachamama');
   const [bgOpacity, setBgOpacity] = useState<number>(30);
@@ -1521,6 +1523,18 @@ export default function App() {
                   <Palette className="w-5 h-5 text-[#EC4899]" />
                   <span className="truncate">5. Temas y Skins</span>
                 </button>
+
+                <button
+                  onClick={() => setSettingsSubTab('judges')}
+                  className={`p-3.5 rounded-2xl border font-black text-xs flex items-center justify-center gap-2.5 transition cursor-pointer ${
+                    settingsSubTab === 'judges'
+                      ? 'bg-[#38BDF8]/20 border-[#38BDF8] text-white shadow-[0_0_20px_rgba(56,189,248,0.3)] ring-1 ring-[#38BDF8]'
+                      : 'bg-[#1b1c26] border-white/10 text-zinc-400 hover:text-white hover:border-white/20'
+                  }`}
+                >
+                  <Smartphone className="w-5 h-5 text-[#8B5CF6]" />
+                  <span className="truncate">6. Jueces / QR</span>
+                </button>
               </div>
             </div>
 
@@ -2258,6 +2272,95 @@ export default function App() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 6: JUECES / QR CODE */}
+            {settingsSubTab === 'judges' && (
+              <div className="pachamama-card rounded-3xl p-6 bg-[#181920] border border-white/10 space-y-6">
+                <div>
+                  <h3 className="text-xl font-black text-white mb-2 pb-3 border-b border-[#2d303a] flex items-center gap-2">
+                    <Smartphone className="w-6 h-6 text-[#8B5CF6]" /> Acceso para Jueces — QR Code
+                  </h3>
+                  <p className="text-xs text-zinc-400 mb-6">
+                    Los jueces pueden escanear este código QR desde su teléfono móvil para acceder instantáneamente al terminal de puntuación. Asegúrate de que los dispositivos estén conectados a la misma red WiFi.
+                  </p>
+
+                  <div className="flex flex-col lg:flex-row items-center gap-8">
+                    {/* QR CODE */}
+                    <div className="bg-white p-5 rounded-3xl shadow-2xl shadow-[#8B5CF6]/20">
+                      <QRCodeSVG
+                        value={`http://${ws.localIp}:${ws.serverPort}/judge`}
+                        size={220}
+                        bgColor="#ffffff"
+                        fgColor="#0f0f14"
+                        level="H"
+                        includeMargin={false}
+                      />
+                    </div>
+
+                    {/* INFO PANEL */}
+                    <div className="flex-1 space-y-4 w-full">
+                      {/* URL Display */}
+                      <div className="p-4 bg-black/40 rounded-2xl border border-white/10">
+                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">URL del Terminal del Juez</span>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-sm font-mono text-[#8B5CF6] bg-[#8B5CF6]/10 px-3 py-2 rounded-xl border border-[#8B5CF6]/30 select-all">
+                            http://{ws.localIp}:{ws.serverPort}/judge
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`http://${ws.localIp}:${ws.serverPort}/judge`);
+                            }}
+                            className="px-3 py-2 bg-[#8B5CF6] text-white text-xs font-bold rounded-xl hover:bg-[#7C3AED] transition cursor-pointer shrink-0"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Connection Info */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-black/40 rounded-2xl border border-white/10">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1">IP del Servidor</span>
+                          <span className="text-sm font-mono font-bold text-white">{ws.localIp}</span>
+                        </div>
+                        <div className="p-3 bg-black/40 rounded-2xl border border-white/10">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1">Puerto</span>
+                          <span className="text-sm font-mono font-bold text-white">{ws.serverPort}</span>
+                        </div>
+                      </div>
+
+                      {/* Connection Status */}
+                      <div className={`p-3 rounded-2xl border flex items-center gap-3 ${
+                        ws.connected
+                          ? 'bg-[#22C55E]/10 border-[#22C55E]/30'
+                          : 'bg-red-500/10 border-red-500/30'
+                      }`}>
+                        <div className={`w-3 h-3 rounded-full animate-pulse ${
+                          ws.connected ? 'bg-[#22C55E]' : 'bg-red-500'
+                        }`} />
+                        <span className={`text-xs font-bold ${
+                          ws.connected ? 'text-[#22C55E]' : 'text-red-400'
+                        }`}>
+                          {ws.connected ? 'Servidor WebSocket Conectado — Listo para recibir jueces' : 'Servidor Desconectado — Verifica que server.cjs esté corriendo'}
+                        </span>
+                      </div>
+
+                      {/* Instructions */}
+                      <div className="p-4 bg-[#8B5CF6]/5 rounded-2xl border border-[#8B5CF6]/20">
+                        <span className="text-xs font-black text-[#8B5CF6] uppercase block mb-2">📋 Instrucciones Rápidas</span>
+                        <ol className="text-[11px] text-zinc-400 space-y-1.5 list-decimal list-inside">
+                          <li>Conecta el celular del juez a la <strong className="text-white">misma red WiFi</strong> que esta PC.</li>
+                          <li>Abre la <strong className="text-white">cámara del celular</strong> y escanea el código QR de arriba.</li>
+                          <li>Se abrirá automáticamente el <strong className="text-white">Terminal del Juez</strong> en el navegador del celular.</li>
+                          <li>El juez selecciona el competidor, el bloque y registra <strong className="text-white">TOP / ZONA / CAÍDA</strong>.</li>
+                        </ol>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
