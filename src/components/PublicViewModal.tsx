@@ -4,6 +4,7 @@ import { Tv, Flame, Trophy, Award, Timer as TimerIcon, Crown, Medal, Sparkles } 
 import { PachamamaLogo } from './PachamamaLogo';
 import { CijelLogo } from './CijelLogo';
 import { CompetitionLogoBanner, CompetitionLogoConfig } from './CompetitionLogoBanner';
+import bgCijel from '../assets/bg_cijel.jpg';
 
 interface PublicViewProps {
   timeRemainingSeconds: number;
@@ -15,6 +16,7 @@ interface PublicViewProps {
   gotZone: boolean;
   showCompetitor?: boolean;
   bgTheme?: 'pachamama' | 'cijel';
+  bgOpacity?: number;
   competitionLogo?: CompetitionLogoConfig;
   competitionInfo?: {
     name: string;
@@ -46,6 +48,7 @@ export const PublicView: React.FC<PublicViewProps> = ({
   gotZone,
   showCompetitor = true,
   bgTheme = 'pachamama',
+  bgOpacity,
   competitionLogo,
   competitionInfo,
   defaultViewMode = 'timer',
@@ -111,15 +114,24 @@ export const PublicView: React.FC<PublicViewProps> = ({
   return (
     <div className={`w-full flex flex-col gap-6 text-white font-sans animate-fade-in relative ${bgTheme === 'cijel' ? 'theme-cijel' : ''}`}>
       
-      {/* 🌌 GIANT DYNAMIC BACKGROUND LOGO (CIJEL or Pachamama based on active skin) */}
+      {/* 🌌 GIANT DYNAMIC BACKGROUND LOGO / COSMIC WALLPAPER (CIJEL or Pachamama based on active skin) */}
       <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden">
-        <div className="w-[100vw] sm:w-[96vw] max-w-[1280px] aspect-square flex items-center justify-center opacity-15 sm:opacity-20 transition-all duration-500">
-          {bgTheme === 'cijel' ? (
-            <CijelLogo size="100%" showText={false} className="w-full h-full" />
-          ) : (
-            <PachamamaLogo size="100%" showText={false} className="w-full h-full" />
-          )}
-        </div>
+        {bgTheme === 'cijel' ? (
+          <div 
+            className="absolute inset-0 bg-cover bg-center transition-all duration-500" 
+            style={{ 
+              backgroundImage: `url(${bgCijel})`, 
+              opacity: (bgOpacity !== undefined ? bgOpacity : 40) / 100 
+            }} 
+          />
+        ) : (
+          <div 
+            className="w-[100vw] sm:w-[96vw] max-w-[1280px] aspect-square flex items-center justify-center transition-all duration-500"
+            style={{ opacity: (bgOpacity !== undefined ? bgOpacity : 15) / 100 }}
+          >
+            <PachamamaLogo size="100%" showText={false} className="w-full h-full animate-pulse" />
+          </div>
+        )}
       </div>
       
       {/* 🎛️ PUBLIC VIEW CONTROL / MODE SELECTOR HEADER BAR */}
@@ -166,7 +178,7 @@ export const PublicView: React.FC<PublicViewProps> = ({
       {viewMode === 'timer' && (
         !showCompetitor ? (
           /* ⏱️ GENERAL ROUND / UNLINKED TIMER PUBLIC VIEW (GIANT TIMER ONLY) */
-          <div className="flex flex-col items-center justify-center pachamama-card rounded-3xl p-8 md:p-14 text-center max-w-5xl mx-auto w-full relative overflow-hidden my-auto shadow-2xl">
+          <div className="flex flex-col items-center justify-center pachamama-card bg-[#0b0c10]/95 rounded-3xl p-8 md:p-14 text-center max-w-5xl mx-auto w-full relative overflow-hidden my-auto shadow-2xl">
             {/* Top Badges */}
             <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <span className={`border font-black px-5 py-2 rounded-full text-xs md:text-sm uppercase tracking-widest flex items-center gap-2 backdrop-blur-sm shadow-md ${
@@ -230,7 +242,7 @@ export const PublicView: React.FC<PublicViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             
             {/* Left Card: Climber & Problem Info */}
-            <div className="lg:col-span-6 flex flex-col justify-between pachamama-card rounded-3xl p-6 md:p-8 relative overflow-hidden">
+            <div className="lg:col-span-6 flex flex-col justify-between pachamama-card bg-[#0b0c10]/95 rounded-3xl p-6 md:p-8 relative overflow-hidden">
               <div className="flex flex-col h-full justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -328,7 +340,7 @@ export const PublicView: React.FC<PublicViewProps> = ({
             </div>
 
             {/* Right Giant Timer Box */}
-            <div className="lg:col-span-6 flex flex-col items-center justify-center pachamama-card rounded-3xl p-8 md:p-12 text-center">
+            <div className="lg:col-span-6 flex flex-col items-center justify-center pachamama-card bg-[#0b0c10]/95 rounded-3xl p-8 md:p-12 text-center">
               {/* Phase Badge */}
               <div className={`px-6 py-2 rounded-full font-black text-sm md:text-base tracking-widest border uppercase mb-6 shadow-md backdrop-blur-md ${phaseStyle.bg} ${phaseStyle.border}`}>
                 {phaseStyle.label}
@@ -362,7 +374,7 @@ export const PublicView: React.FC<PublicViewProps> = ({
         <div className="flex flex-col gap-6 animate-fade-in">
           
           {/* FULL RANKINGS HIGH-CONTRAST PROJECTOR TABLE */}
-          <div className="pachamama-card rounded-3xl p-6 border border-white/10 overflow-hidden">
+          <div className="pachamama-card bg-[#0b0c10]/95 rounded-3xl p-6 border border-white/10 overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-white/10">
               <div>
                 <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">

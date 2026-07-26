@@ -42,6 +42,9 @@ import { TimerConfigPanel } from './components/TimerConfigPanel';
 import { CompetitorManager } from './components/CompetitorManager';
 import { ProblemManager } from './components/ProblemManager';
 import { CompetitionLogoBanner, CompetitionLogoConfig } from './components/CompetitionLogoBanner';
+import { useClimbCompWS } from './hooks/useClimbCompWS';
+import { JudgeTerminal } from './components/JudgeTerminal';
+import bgCijel from './assets/bg_cijel.jpg';
 
 // Mock Data for Pachamama Boulder Championship
 const INITIAL_COMPETITORS: Competitor[] = [
@@ -60,11 +63,18 @@ const INITIAL_PROBLEMS: Problem[] = [
 ];
 
 export default function App() {
+  const ws = useClimbCompWS();
+
+  // Enrutar si el path es /judge
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/judge')) {
+    return <JudgeTerminal ws={ws} />;
+  }
   // Navigation & View mode
   const [activeTab, setActiveTab] = useState<'timer' | 'public' | 'results' | 'competitors' | 'settings' | 'forms'>('timer');
   const [settingsSubTab, setSettingsSubTab] = useState<'timer' | 'problems' | 'info' | 'rules' | 'skins'>('timer');
   const [showCompetitorInTimer, setShowCompetitorInTimer] = useState(true);
   const [bgTheme, setBgTheme] = useState<'pachamama' | 'cijel'>('pachamama');
+  const [bgOpacity, setBgOpacity] = useState<number>(30);
 
   // Configurable Competition Logo State
   const [competitionLogo, setCompetitionLogo] = useState<CompetitionLogoConfig>({
@@ -72,6 +82,7 @@ export default function App() {
     featherEdges: true,
     featherIntensity: 'medium',
     maxHeightPx: 80,
+    headerMaxHeightPx: 60,
   });
 
   // Competition Details State
@@ -132,8 +143,74 @@ export default function App() {
   const currentCompetitor = competitors[currentCompetitorIndex] || competitors[0];
   const currentProblem = problems[currentProblemIndex] || problems[0];
 
+  // Sincronización del estado del WebSocket con la UI de React
+  useEffect(() => {
+    if (!ws.state || ws.state.competition.name === "Cargando Competencia...") return;
+
+    if (ws.state.competitors && ws.state.competitors.length > 0) {
+      setCompetitors(ws.state.competitors);
+    }
+    if (ws.state.problems && ws.state.problems.length > 0) {
+      setProblems(ws.state.problems);
+    }
+
+    const comp = ws.state.competition;
+    setCompetitionInfo({
+      name: comp.name,
+      location: comp.location,
+      category: comp.rules.scoringType === 'ifsc' ? 'IFSC Estándar' : 'Puntuación Personalizada',
+      round: comp.rules.rotationFormat === 'circuit' ? 'Rotación (Circuito)' : 'Bloques Abiertos',
+      organizer: 'Muro Pachamama / CIJEL',
+    });
+
+    setTimerConfig({
+      prepTime: comp.timerConfig.prepTime,
+      climbTime: comp.timerConfig.climbTime,
+      pauseTime: comp.timerConfig.pauseTime,
+      preEndWarning: comp.timerConfig.preEndWarning,
+      preStartWarning: comp.timerConfig.preStartWarning,
+      mode: comp.rules.rotationFormat === 'circuit' ? 'auto' : 'manual',
+      soundEnabled: true,
+      volume: 80,
+    });
+
+    setPhase(ws.state.timerState.phase);
+    setTimeRemaining(ws.state.timerState.remaining);
+    setCurrentCompetitorIndex(ws.state.timerState.activeCompetitorIndex);
+    setCurrentProblemIndex(ws.state.timerState.activeProblemIndex);
+
+    if (comp.bgTheme) {
+      setBgTheme(comp.bgTheme);
+    }
+    if (comp.bgOpacity !== undefined) {
+      setBgOpacity(comp.bgOpacity);
+    } else {
+      setBgOpacity(comp.bgTheme === 'cijel' ? 40 : 15);
+    }
+  }, [ws.state]);
+
+  // Listener para alertas de sonido centralizadas en el PC servidor
+  useEffect(() => {
+    const handleSoundTrigger = (e: any) => {
+      const sound = e.detail;
+      console.log("[Audio] Sonido disparado por WebSocket:", sound);
+      if (sound === 'pre_start') soundEngine.playWarningBeep();
+      else if (sound === 'pre_end') soundEngine.playWarningBeep();
+      else if (sound === 'start_climbing') soundEngine.playHorn(0.8, 220);
+      else if (sound === 'end_climbing') soundEngine.playHorn(0.8, 220);
+      else if (sound === 'start_prep') soundEngine.playWarningBeep();
+      else if (sound === 'top_success') soundEngine.playTopChime();
+      else if (sound === 'zone_success') soundEngine.playZoneChime();
+    };
+    window.addEventListener('sound_trigger', handleSoundTrigger);
+    return () => window.removeEventListener('sound_trigger', handleSoundTrigger);
+  }, []);
+
   // Precision Timer Engine
   const animateTimer = (time: number) => {
+    // Si el servidor local WebSocket maneja el tiempo, no animar localmente
+    if (ws.connected) return;
+    
     if (lastTimeRef.current !== null && phase === 'climb') {
       const deltaTime = (time - lastTimeRef.current) / 1000;
       setTimeRemaining((prev) => {
@@ -158,6 +235,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (ws.connected) return; // Saltar control local si está sincronizado por WebSocket
     if (phase === 'climb') {
       lastTimeRef.current = performance.now();
       requestRef.current = requestAnimationFrame(animateTimer);
@@ -168,7 +246,7 @@ export default function App() {
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [phase]);
+  }, [phase, ws.connected]);
 
   // Keyboard Shortcuts Controller
   useEffect(() => {
@@ -213,41 +291,57 @@ export default function App() {
 
   // Timer Control Handlers
   const handleToggleTimer = () => {
-    if (phase === 'idle' || phase === 'stopped' || phase === 'pause') {
-      setPhase('climb');
-      if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.climbStartAudio, 'horn');
-    } else if (phase === 'climb') {
-      setPhase('stopped');
+    if (ws.connected) {
+      ws.startTimer();
+    } else {
+      if (phase === 'idle' || phase === 'stopped' || phase === 'pause') {
+        setPhase('climb');
+        if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.climbStartAudio, 'horn');
+      } else if (phase === 'climb') {
+        setPhase('stopped');
+      }
     }
   };
 
   const handlePauseTimer = () => {
-    setPhase('stopped');
+    if (ws.connected) {
+      ws.pauseTimer();
+    } else {
+      setPhase('stopped');
+    }
   };
 
   const handleResetTimer = () => {
-    setPhase('idle');
-    setTimeRemaining(timerConfig.climbTime);
+    if (ws.connected) {
+      ws.resetTimer();
+    } else {
+      setPhase('idle');
+      setTimeRemaining(timerConfig.climbTime);
+    }
   };
 
   const handleNextPhase = () => {
-    if (phase === 'prep') {
-      setPhase('climb');
-      setTimeRemaining(timerConfig.climbTime);
-      if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.climbStartAudio, 'horn');
-    } else if (phase === 'climb') {
-      setPhase('pause');
-      setTimeRemaining(timerConfig.pauseTime);
-      if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.pauseStartAudio, 'prep');
+    if (ws.connected) {
+      ws.nextPhase();
     } else {
-      setPhase('climb');
-      setTimeRemaining(timerConfig.climbTime);
-      if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.climbStartAudio, 'horn');
-      if (currentCompetitorIndex < competitors.length - 1) {
-        setCurrentCompetitorIndex((prev) => prev + 1);
-        setAttemptCount(1);
-        setGotTop(false);
-        setGotZone(false);
+      if (phase === 'prep') {
+        setPhase('climb');
+        setTimeRemaining(timerConfig.climbTime);
+        if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.climbStartAudio, 'horn');
+      } else if (phase === 'climb') {
+        setPhase('pause');
+        setTimeRemaining(timerConfig.pauseTime);
+        if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.pauseStartAudio, 'prep');
+      } else {
+        setPhase('climb');
+        setTimeRemaining(timerConfig.climbTime);
+        if (!isMuted) soundEngine.playEventAudio(timerConfig.audio?.climbStartAudio, 'horn');
+        if (currentCompetitorIndex < competitors.length - 1) {
+          setCurrentCompetitorIndex((prev) => prev + 1);
+          setAttemptCount(1);
+          setGotTop(false);
+          setGotZone(false);
+        }
       }
     }
   };
@@ -327,55 +421,148 @@ export default function App() {
   };
 
   const handleRegisterTop = () => {
-    setGotTop((prev) => {
-      const nextVal = !prev;
-      if (nextVal) {
-        setGotZone(true);
-        if (!isMuted) soundEngine.playTopChime();
-      }
-      return nextVal;
-    });
+    if (ws.connected && currentCompetitor && currentProblem) {
+      ws.submitScore(currentCompetitor.id, currentProblem.id, 'top');
+    } else {
+      setGotTop((prev) => {
+        const nextVal = !prev;
+        if (nextVal) {
+          setGotZone(true);
+          if (!isMuted) soundEngine.playTopChime();
+        }
+        return nextVal;
+      });
+    }
   };
 
   const handleRegisterZone = () => {
-    setGotZone((prev) => {
-      const nextVal = !prev;
-      if (nextVal && !isMuted) soundEngine.playZoneChime();
-      return nextVal;
-    });
+    if (ws.connected && currentCompetitor && currentProblem) {
+      ws.submitScore(currentCompetitor.id, currentProblem.id, 'zone');
+    } else {
+      setGotZone((prev) => {
+        const nextVal = !prev;
+        if (nextVal && !isMuted) soundEngine.playZoneChime();
+        return nextVal;
+      });
+    }
   };
 
   const minutes = Math.floor(Math.max(0, timeRemaining) / 60);
   const seconds = Math.floor(Math.max(0, timeRemaining) % 60);
   const tenths = Math.floor((Math.max(0, timeRemaining) % 1) * 10);
 
+  // Helper para clasificar y ordenar competidores dinámicamente
+  const getSortedCompetitors = () => {
+    if (!ws.connected || !ws.state) {
+      return competitors.map((c) => ({
+        competitor: c,
+        totalTops: c.status === 'completed' ? 2 : 1,
+        totalZones: c.status === 'completed' ? 3 : 2,
+        topAttempts: c.status === 'completed' ? 4 : 2,
+        zoneAttempts: c.status === 'completed' ? 5 : 3,
+        customScore: c.status === 'completed' ? 49.8 : 24.9
+      })).sort((a, b) => b.totalTops - a.totalTops);
+    }
+
+    const scoringSystem = ws.state.competition.rules.scoringType;
+    const customConfig = ws.state.competition.customScoringConfig || { pointsTop: 25, pointsZone: 10, pointsPenalty: 0.1 };
+
+    const stats = competitors.map(comp => {
+      let totalTops = 0;
+      let totalZones = 0;
+      let topAttempts = 0;
+      let zoneAttempts = 0;
+      let customScore = 0;
+
+      problems.forEach(prob => {
+        const key = `${comp.id}_${prob.id}`;
+        const score = ws.state.scores[key];
+        if (score) {
+          if (score.gotTop) {
+            totalTops++;
+            topAttempts += score.topAttempt || score.attempts;
+          }
+          if (score.gotZone) {
+            totalZones++;
+            zoneAttempts += score.zoneAttempt || score.attempts;
+          }
+
+          const basePoints = score.gotTop ? customConfig.pointsTop : (score.gotZone ? customConfig.pointsZone : 0);
+          customScore += basePoints - (score.attempts * customConfig.pointsPenalty);
+        }
+      });
+
+      return {
+        competitor: comp,
+        totalTops,
+        totalZones,
+        topAttempts,
+        zoneAttempts,
+        customScore
+      };
+    });
+
+    if (scoringSystem === 'custom') {
+      return stats.sort((a, b) => {
+        if (b.customScore !== a.customScore) {
+          return b.customScore - a.customScore;
+        }
+        return a.competitor.startOrder - b.competitor.startOrder;
+      });
+    } else {
+      return stats.sort((a, b) => {
+        if (b.totalTops !== a.totalTops) return b.totalTops - a.totalTops;
+        if (b.totalZones !== a.totalZones) return b.totalZones - a.totalZones;
+        if (a.topAttempts !== b.topAttempts) return a.topAttempts - b.topAttempts;
+        if (a.zoneAttempts !== b.zoneAttempts) return a.zoneAttempts - b.zoneAttempts;
+        return a.competitor.startOrder - b.competitor.startOrder;
+      });
+    }
+  };
+
+  // Obtener estado real de intentos del WebSocket si está conectado
+  const scoreKey = currentCompetitor && currentProblem ? `${currentCompetitor.id}_${currentProblem.id}` : '';
+  const wsScore = ws.connected && scoreKey ? ws.state.scores[scoreKey] : null;
+  const currentAttempts = wsScore ? wsScore.attempts : attemptCount;
+  const currentGotTop = wsScore ? wsScore.gotTop : gotTop;
+  const currentGotZone = wsScore ? wsScore.gotZone : gotZone;
+
   return (
     <div className={`min-h-screen bg-[#0d0e12] text-white font-sans selection:bg-[#1AA0E6] selection:text-white flex flex-col relative overflow-x-hidden ${bgTheme === 'cijel' ? 'theme-cijel' : ''}`}>
       
-      {/* 🌌 GIANT DYNAMIC BACKGROUND LOGO (CIJEL or Pachamama based on active skin) */}
+      {/* 🌌 GIANT DYNAMIC BACKGROUND LOGO / COSMIC WALLPAPER (CIJEL or Pachamama based on active skin) */}
       <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden">
-        <div className="w-[100vw] sm:w-[96vw] max-w-[1280px] aspect-square flex items-center justify-center opacity-15 sm:opacity-20 transition-all duration-500">
-          {bgTheme === 'cijel' ? (
-            <CijelLogo size="100%" showText={false} className="w-full h-full" />
-          ) : (
-            <PachamamaLogo size="100%" showText={false} className="w-full h-full" />
-          )}
-        </div>
+        {bgTheme === 'cijel' ? (
+          <div 
+            className="absolute inset-0 bg-cover bg-center transition-all duration-500" 
+            style={{ 
+              backgroundImage: `url(${bgCijel})`, 
+              opacity: bgOpacity / 100 
+            }} 
+          />
+        ) : (
+          <div 
+            className="w-[100vw] sm:w-[96vw] max-w-[1280px] aspect-square flex items-center justify-center transition-all duration-500"
+            style={{ opacity: bgOpacity / 100 }}
+          >
+            <PachamamaLogo size="100%" showText={false} className="w-full h-full animate-pulse" />
+          </div>
+        )}
       </div>
 
       {/* 🧭 HEADER BAR WITH LOGO & NAVIGATION */}
       <header className="border-b border-white/10 bg-[#121319]/70 backdrop-blur-md px-4 md:px-8 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-[0_8px_24px_rgba(0,0,0,0.8)]">
         <div className="flex items-center gap-3">
           {competitionLogo.type === 'cijel' || (competitionLogo.type === 'none' && bgTheme === 'cijel') ? (
-            <CijelLogo size={42} showText={true} />
+            <CijelLogo size={competitionLogo.headerMaxHeightPx || 42} showText={true} />
           ) : competitionLogo.type === 'pachamama' || (competitionLogo.type === 'none' && bgTheme === 'pachamama') ? (
-            <PachamamaLogo size={42} showText={true} />
+            <PachamamaLogo size={competitionLogo.headerMaxHeightPx || 42} showText={true} />
           ) : competitionLogo.type === 'custom' && competitionLogo.customUrl ? (
-            <img src={competitionLogo.customUrl} alt="Logo" className="h-10 max-w-[160px] object-contain" />
+            <img src={competitionLogo.customUrl} alt="Logo" style={{ height: `${competitionLogo.headerMaxHeightPx || 40}px` }} className="max-w-[160px] object-contain" />
           ) : bgTheme === 'cijel' ? (
-            <CijelLogo size={42} showText={true} />
+            <CijelLogo size={competitionLogo.headerMaxHeightPx || 42} showText={true} />
           ) : (
-            <PachamamaLogo size={42} showText={true} />
+            <PachamamaLogo size={competitionLogo.headerMaxHeightPx || 42} showText={true} />
           )}
         </div>
 
@@ -737,16 +924,28 @@ export default function App() {
                   </span>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => setAttemptCount((prev) => Math.max(1, prev - 1))}
+                      onClick={() => {
+                        if (ws.connected && currentCompetitor && currentProblem) {
+                          ws.undoScore();
+                        } else {
+                          setAttemptCount((prev) => Math.max(1, prev - 1));
+                        }
+                      }}
                       className="pachamama-btn-dark w-9 h-9 rounded-xl font-black text-lg flex items-center justify-center transition cursor-pointer"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
                     <span className="text-3xl font-black text-white w-8 text-center">
-                      {attemptCount}
+                      {currentAttempts}
                     </span>
                     <button
-                      onClick={() => setAttemptCount((prev) => prev + 1)}
+                      onClick={() => {
+                        if (ws.connected && currentCompetitor && currentProblem) {
+                          ws.submitScore(currentCompetitor.id, currentProblem.id, 'fall');
+                        } else {
+                          setAttemptCount((prev) => prev + 1);
+                        }
+                      }}
                       className="pachamama-btn-dark w-9 h-9 rounded-xl font-black text-lg flex items-center justify-center transition cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
@@ -761,14 +960,14 @@ export default function App() {
                   <button
                     onClick={handleRegisterZone}
                     className={`py-5 px-6 rounded-2xl font-black text-xl md:text-2xl transition flex items-center justify-center gap-3 cursor-pointer ${
-                      gotZone
+                      currentGotZone
                         ? 'pachamama-btn-ochre ring-4 ring-[#E8A843]/60'
                         : 'pachamama-btn-dark'
                     }`}
                   >
                     <span>🟡 ZONA</span>
                     <span className="text-xs bg-black/20 px-2 py-1 rounded-lg uppercase">
-                      [Z] {gotZone ? '✓' : ''}
+                      [Z] {currentGotZone ? '✓' : ''}
                     </span>
                   </button>
 
@@ -776,14 +975,14 @@ export default function App() {
                   <button
                     onClick={handleRegisterTop}
                     className={`py-5 px-6 rounded-2xl font-black text-xl md:text-2xl transition flex items-center justify-center gap-3 cursor-pointer ${
-                      gotTop
+                      currentGotTop
                         ? 'pachamama-btn-terracotta ring-4 ring-[#DE7B7B]/60'
                         : 'pachamama-btn-dark'
                     }`}
                   >
                     <span>🔴 TOP</span>
                     <span className="text-xs bg-black/20 px-2 py-1 rounded-lg uppercase">
-                      [T] {gotTop ? '✓' : ''}
+                      [T] {currentGotTop ? '✓' : ''}
                     </span>
                   </button>
                 </div>
@@ -806,53 +1005,51 @@ export default function App() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#E2A838]/10 border border-[#E2A838]/30 shadow-md">
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-full bg-[#E2A838] text-black font-black text-xs flex items-center justify-center">
-                        1º
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm text-white">Ana Rodríguez</p>
-                        <p className="text-[10px] text-zinc-400">Vertical Limit</p>
+                  {getSortedCompetitors().slice(0, 3).map((item, idx) => {
+                    const isFirst = idx === 0;
+                    const isCustom = ws.state?.competition?.rules?.scoringType === 'custom';
+                    
+                    return (
+                      <div 
+                        key={item.competitor.id}
+                        className={`flex items-center justify-between p-3.5 rounded-2xl border transition ${
+                          isFirst 
+                            ? 'bg-[#E2A838]/10 border-[#E2A838]/30 shadow-md' 
+                            : 'bg-[#1d1e25] border-[#2d303a]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center ${
+                            idx === 0 ? 'bg-[#E2A838] text-black' : idx === 1 ? 'bg-zinc-700 text-white' : 'bg-zinc-800 text-zinc-400'
+                          }`}>
+                            {idx + 1}º
+                          </span>
+                          <div>
+                            <p className="font-bold text-sm text-white">{item.competitor.name}</p>
+                            <p className="text-[10px] text-zinc-400">{item.competitor.club || 'Independiente'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right font-mono">
+                          {isCustom ? (
+                            <>
+                              <span className={`text-xs font-black ${isFirst ? 'text-[#EC4899]' : 'text-[#E2A838]'}`}>
+                                {item.customScore.toFixed(1)} pts
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className={`text-xs font-black ${isFirst ? 'text-[#E06A6A]' : 'text-[#E2A838]'}`}>
+                                {item.totalTops}T {item.totalZones}z
+                              </span>
+                              <p className="text-[10px] text-zinc-500">
+                                {item.topAttempts}iT {item.zoneAttempts}iz
+                              </p>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right font-mono">
-                      <span className="text-xs font-black text-[#E06A6A]">3T 4z</span>
-                      <p className="text-[10px] text-zinc-500">6iT 8iz</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#1d1e25] border border-[#2d303a]">
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-full bg-zinc-700 text-white font-black text-xs flex items-center justify-center">
-                        2º
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm text-white">María García</p>
-                        <p className="text-[10px] text-zinc-400">Pachamama Team</p>
-                      </div>
-                    </div>
-                    <div className="text-right font-mono">
-                      <span className="text-xs font-black text-[#E06A6A]">2T 3z</span>
-                      <p className="text-[10px] text-zinc-500">4iT 5iz</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#1d1e25] border border-[#2d303a]">
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-full bg-zinc-800 text-zinc-400 font-black text-xs flex items-center justify-center">
-                        3º
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm text-white">Pedro López</p>
-                        <p className="text-[10px] text-zinc-400">Boulder Club Norte</p>
-                      </div>
-                    </div>
-                    <div className="text-right font-mono">
-                      <span className="text-xs font-black text-[#E2A838]">1T 2z</span>
-                      <p className="text-[10px] text-zinc-500">2iT 3iz</p>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
 
                 <button
@@ -917,10 +1114,14 @@ export default function App() {
                 <button
                   key={c.id}
                   onClick={() => {
-                    setCurrentCompetitorIndex(idx);
-                    setAttemptCount(1);
-                    setGotTop(false);
-                    setGotZone(false);
+                    if (ws.connected) {
+                      ws.selectActiveCompetitor(idx);
+                    } else {
+                      setCurrentCompetitorIndex(idx);
+                      setAttemptCount(1);
+                      setGotTop(false);
+                      setGotZone(false);
+                    }
                   }}
                   className={`px-4 py-2.5 rounded-2xl text-xs font-black transition whitespace-nowrap cursor-pointer flex items-center gap-2 shrink-0 ${
                     idx === currentCompetitorIndex
@@ -936,7 +1137,13 @@ export default function App() {
 
             <div className="flex items-center gap-1.5 shrink-0">
               <button
-                onClick={() => setCurrentCompetitorIndex((prev) => Math.max(0, prev - 1))}
+                onClick={() => {
+                  if (ws.connected) {
+                    ws.selectActiveCompetitor(Math.max(0, currentCompetitorIndex - 1));
+                  } else {
+                    setCurrentCompetitorIndex((prev) => Math.max(0, prev - 1));
+                  }
+                }}
                 disabled={currentCompetitorIndex === 0}
                 className="p-2.5 rounded-xl pachamama-btn-dark text-zinc-200 disabled:opacity-30 cursor-pointer"
                 title="Competidor Anterior"
@@ -944,7 +1151,13 @@ export default function App() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                onClick={() => setCurrentCompetitorIndex((prev) => Math.min(competitors.length - 1, prev + 1))}
+                onClick={() => {
+                  if (ws.connected) {
+                    ws.selectActiveCompetitor(Math.min(competitors.length - 1, currentCompetitorIndex + 1));
+                  } else {
+                    setCurrentCompetitorIndex((prev) => Math.min(competitors.length - 1, prev + 1));
+                  }
+                }}
                 disabled={currentCompetitorIndex === competitors.length - 1}
                 className="p-2.5 rounded-xl pachamama-btn-dark text-zinc-200 disabled:opacity-30 cursor-pointer"
                 title="Siguiente Competidor"
@@ -963,11 +1176,12 @@ export default function App() {
             phase={phase}
             currentCompetitor={currentCompetitor}
             currentProblem={currentProblem}
-            attemptsCount={attemptCount}
-            gotTop={gotTop}
-            gotZone={gotZone}
+            attemptsCount={currentAttempts}
+            gotTop={currentGotTop}
+            gotZone={currentGotZone}
             showCompetitor={showCompetitorInTimer}
             bgTheme={bgTheme}
+            bgOpacity={bgOpacity}
             competitionLogo={competitionLogo}
             competitionInfo={competitionInfo}
           />
@@ -980,52 +1194,113 @@ export default function App() {
             {/* Top Podium Showcase */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               {/* 🥈 2º PUESTO */}
-              <div className="order-2 md:order-1 pachamama-card rounded-3xl p-5 border border-slate-300/50 bg-gradient-to-b from-slate-900/80 to-[#121319]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="bg-slate-300 text-black font-black text-xs px-3 py-1 rounded-full uppercase">
-                    🥈 2º PLATA
-                  </span>
-                  <span className="font-mono text-slate-300 font-bold">#14</span>
-                </div>
-                <h3 className="text-xl font-black text-white">María García</h3>
-                <p className="text-zinc-400 text-xs">Pachamama Team</p>
-                <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-xs font-bold">
-                  <span>2 Tops (3 int)</span>
-                  <span className="text-[#FACC15]">3 Zonas (4 int)</span>
-                </div>
-              </div>
+              {(() => {
+                const sorted = getSortedCompetitors();
+                const first = sorted[0];
+                const second = sorted[1];
+                const third = sorted[2];
+                const isCustom = ws.state?.competition?.rules?.scoringType === 'custom';
 
-              {/* 🥇 1º PUESTO */}
-              <div className="order-1 md:order-2 pachamama-card rounded-3xl p-6 border-2 border-[#FACC15] bg-gradient-to-b from-[#2a220c] to-[#121319] shadow-[0_0_30px_rgba(250,204,21,0.3)] -translate-y-2">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="bg-gradient-to-r from-[#FACC15] to-[#E8A843] text-black font-black text-xs px-3.5 py-1 rounded-full uppercase flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 fill-black" /> 1º ORO
-                  </span>
-                  <span className="font-mono text-[#FACC15] text-xl font-black">#22</span>
-                </div>
-                <h3 className="text-2xl font-black text-white">Ana Rodríguez</h3>
-                <p className="text-[#FACC15] text-xs font-bold">Vertical Limit</p>
-                <div className="mt-4 pt-3 border-t border-[#FACC15]/30 flex justify-between text-sm font-black text-white">
-                  <span>3 Tops (4 int)</span>
-                  <span className="text-[#FACC15]">4 Zonas (5 int)</span>
-                </div>
-              </div>
+                return (
+                  <>
+                    {/* 🥈 2º PUESTO */}
+                    <div className="order-2 md:order-1 pachamama-card rounded-3xl p-5 border border-slate-300/50 bg-gradient-to-b from-slate-900/80 to-[#121319]">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="bg-slate-300 text-black font-black text-xs px-3 py-1 rounded-full uppercase">
+                          🥈 2º PLATA
+                        </span>
+                        <span className="font-mono text-slate-300 font-bold">
+                          {second ? `#${second.competitor.dorsal}` : '-'}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-black text-white">
+                        {second ? second.competitor.name : 'Pendiente'}
+                      </h3>
+                      <p className="text-zinc-400 text-xs">
+                        {second ? (second.competitor.club || 'Independiente') : '-'}
+                      </p>
+                      <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-xs font-bold">
+                        {second ? (
+                          isCustom ? (
+                            <span className="text-[#EC4899] font-black">{second.customScore.toFixed(1)} pts</span>
+                          ) : (
+                            <>
+                              <span>{second.totalTops} Tops ({second.topAttempts} int)</span>
+                              <span className="text-[#FACC15]">{second.totalZones} Zonas ({second.zoneAttempts} int)</span>
+                            </>
+                          )
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </div>
+                    </div>
 
-              {/* 🥉 3º PUESTO */}
-              <div className="order-3 pachamama-card rounded-3xl p-5 border border-amber-600/50 bg-gradient-to-b from-amber-950/40 to-[#121319]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="bg-amber-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase">
-                    🥉 3º BRONCE
-                  </span>
-                  <span className="font-mono text-amber-500 font-bold">#07</span>
-                </div>
-                <h3 className="text-xl font-black text-white">Pedro López</h3>
-                <p className="text-zinc-400 text-xs">Boulder Club Norte</p>
-                <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-xs font-bold">
-                  <span>1 Top (2 int)</span>
-                  <span className="text-[#FACC15]">2 Zonas (3 int)</span>
-                </div>
-              </div>
+                    {/* 🥇 1º PUESTO */}
+                    <div className="order-1 md:order-2 pachamama-card rounded-3xl p-6 border-2 border-[#FACC15] bg-gradient-to-b from-[#2a220c] to-[#121319] shadow-[0_0_30px_rgba(250,204,21,0.3)] -translate-y-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="bg-gradient-to-r from-[#FACC15] to-[#E8A843] text-black font-black text-xs px-3.5 py-1 rounded-full uppercase flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 fill-black" /> 1º ORO
+                        </span>
+                        <span className="font-mono text-[#FACC15] text-xl font-black">
+                          {first ? `#${first.competitor.dorsal}` : '-'}
+                        </span>
+                      </div>
+                      <h3 className="text-2xl font-black text-white">
+                        {first ? first.competitor.name : 'Pendiente'}
+                      </h3>
+                      <p className="text-[#FACC15] text-xs font-bold">
+                        {first ? (first.competitor.club || 'Independiente') : '-'}
+                      </p>
+                      <div className="mt-4 pt-3 border-t border-[#FACC15]/30 flex justify-between text-sm font-black text-white">
+                        {first ? (
+                          isCustom ? (
+                            <span className="text-[#EC4899] font-black">{first.customScore.toFixed(1)} pts</span>
+                          ) : (
+                            <>
+                              <span>{first.totalTops} Tops ({first.topAttempts} int)</span>
+                              <span className="text-[#FACC15]">{first.totalZones} Zonas ({first.zoneAttempts} int)</span>
+                            </>
+                          )
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 🥉 3º PUESTO */}
+                    <div className="order-3 pachamama-card rounded-3xl p-5 border border-amber-600/50 bg-gradient-to-b from-amber-950/40 to-[#121319]">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="bg-amber-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase">
+                          🥉 3º BRONCE
+                        </span>
+                        <span className="font-mono text-amber-500 font-bold">
+                          {third ? `#${third.competitor.dorsal}` : '-'}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-black text-white">
+                        {third ? third.competitor.name : 'Pendiente'}
+                      </h3>
+                      <p className="text-zinc-400 text-xs">
+                        {third ? (third.competitor.club || 'Independiente') : '-'}
+                      </p>
+                      <div className="mt-3 pt-3 border-t border-white/10 flex justify-between text-xs font-bold">
+                        {third ? (
+                          isCustom ? (
+                            <span className="text-[#EC4899] font-black">{third.customScore.toFixed(1)} pts</span>
+                          ) : (
+                            <>
+                              <span>{third.totalTops} Tops ({third.topAttempts} int)</span>
+                              <span className="text-[#FACC15]">{third.totalZones} Zonas ({third.zoneAttempts} int)</span>
+                            </>
+                          )
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Results Table Card */}
@@ -1059,69 +1334,100 @@ export default function App() {
                       <th className="p-3">Dorsal</th>
                       <th className="p-3">Competidor</th>
                       <th className="p-3">Categoría</th>
-                      <th className="p-3 text-center">Bloque 1</th>
-                      <th className="p-3 text-center">Bloque 2</th>
-                      <th className="p-3 text-center">Bloque 3</th>
-                      <th className="p-3 text-center">Total Tops</th>
-                      <th className="p-3 text-center">Total Zonas</th>
+                      {problems.map((p) => (
+                        <th key={p.id} className="p-3 text-center">B{p.number}</th>
+                      ))}
+                      {ws.state?.competition?.rules?.scoringType === 'custom' ? (
+                        <th className="p-3 text-center text-[#EC4899]">Puntaje</th>
+                      ) : (
+                        <>
+                          <th className="p-3 text-center text-[#EC4899]">Tops</th>
+                          <th className="p-3 text-center text-[#FACC15]">Zonas</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#282a35] font-mono">
-                    <tr className="bg-[#FACC15]/10 border-l-4 border-l-[#FACC15] hover:bg-[#FACC15]/20 font-bold">
-                      <td className="p-3 font-black text-[#FACC15]">🥇 1º</td>
-                      <td className="p-3 font-black text-white">#22</td>
-                      <td className="p-3 font-bold text-white">Ana Rodríguez</td>
-                      <td className="p-3 text-zinc-300">Senior Femenino</td>
-                      <td className="p-3 text-center text-[#EC4899] font-bold">T1 z1</td>
-                      <td className="p-3 text-center text-[#EC4899] font-bold">T2 z1</td>
-                      <td className="p-3 text-center text-[#EC4899] font-bold">T3 z2</td>
-                      <td className="p-3 text-center font-black text-[#EC4899] text-base">3</td>
-                      <td className="p-3 text-center font-black text-[#FACC15] text-base">4</td>
-                    </tr>
-                    <tr className="bg-slate-300/10 border-l-4 border-l-slate-300 hover:bg-slate-300/20 font-bold">
-                      <td className="p-3 font-black text-slate-300">🥈 2º</td>
-                      <td className="p-3 font-black text-white">#14</td>
-                      <td className="p-3 font-bold text-white">María García</td>
-                      <td className="p-3 text-zinc-300">Senior Femenino</td>
-                      <td className="p-3 text-center text-[#EC4899] font-bold">T1 z1</td>
-                      <td className="p-3 text-center text-[#EC4899] font-bold">T3 z1</td>
-                      <td className="p-3 text-center text-[#FACC15] font-bold">z1</td>
-                      <td className="p-3 text-center font-black text-[#EC4899] text-base">2</td>
-                      <td className="p-3 text-center font-black text-[#FACC15] text-base">3</td>
-                    </tr>
-                    <tr className="bg-amber-600/10 border-l-4 border-l-amber-600 hover:bg-amber-600/20 font-bold">
-                      <td className="p-3 font-black text-amber-500">🥉 3º</td>
-                      <td className="p-3 font-black text-white">#07</td>
-                      <td className="p-3 font-bold text-white">Pedro López</td>
-                      <td className="p-3 text-zinc-300">Senior Masculino</td>
-                      <td className="p-3 text-center text-[#EC4899] font-bold">T2 z2</td>
-                      <td className="p-3 text-center text-[#FACC15] font-bold">z1</td>
-                      <td className="p-3 text-center text-zinc-600">-</td>
-                      <td className="p-3 text-center font-black text-[#EC4899] text-base">1</td>
-                      <td className="p-3 text-center font-black text-[#FACC15] text-base">2</td>
-                    </tr>
-                    <tr className="hover:bg-[#20222b]">
-                      <td className="p-3 font-black text-zinc-500">4º</td>
-                      <td className="p-3 font-black text-white">#03</td>
-                      <td className="p-3 font-bold text-zinc-200">Luis Martínez</td>
-                      <td className="p-3 text-zinc-400">Senior Masculino</td>
-                      <td className="p-3 text-center text-[#FACC15]">z1</td>
-                      <td className="p-3 text-center text-[#FACC15]">z2</td>
-                      <td className="p-3 text-center text-zinc-600">-</td>
-                      <td className="p-3 text-center font-black text-zinc-500">0</td>
-                      <td className="p-3 text-center font-black text-[#FACC15]">2</td>
-                    </tr>
-                    <tr className="hover:bg-[#20222b]">
-                      <td className="p-3 font-black text-zinc-500">5º</td>
-                      <td className="p-3 font-black text-white">#18</td>
-                      <td className="p-3 font-bold text-zinc-200">Sofia Fernández</td>
-                      <td className="p-3 text-zinc-400">Senior Femenino</td>
-                      <td className="p-3 text-center text-[#FACC15]">z2</td>
-                      <td className="p-3 text-center text-zinc-600">-</td>
-                      <td className="p-3 text-center text-zinc-600">-</td>
-                      <td className="p-3 text-center font-black text-zinc-500">0</td>
-                      <td className="p-3 text-center font-black text-[#FACC15]">1</td>
-                    </tr>
+                    {getSortedCompetitors().map((item, idx) => {
+                      const isFirst = idx === 0;
+                      const isSecond = idx === 1;
+                      const isThird = idx === 2;
+                      const isCustom = ws.state?.competition?.rules?.scoringType === 'custom';
+
+                      const rowBg = isFirst 
+                        ? 'bg-[#FACC15]/10 border-l-4 border-l-[#FACC15] font-bold' 
+                        : isSecond 
+                          ? 'bg-slate-300/10 border-l-4 border-l-slate-300 font-bold'
+                          : isThird 
+                            ? 'bg-amber-600/10 border-l-4 border-l-amber-600 font-bold'
+                            : 'hover:bg-[#20222b]';
+
+                      const posText = isFirst 
+                        ? '🥇 1º' 
+                        : isSecond 
+                          ? '🥈 2º' 
+                          : isThird 
+                            ? '🥉 3º' 
+                            : `${idx + 1}º`;
+
+                      return (
+                        <tr key={item.competitor.id} className={`${rowBg}`}>
+                          <td className={`p-3 font-black ${isFirst ? 'text-[#FACC15]' : isSecond ? 'text-slate-300' : isThird ? 'text-amber-500' : 'text-zinc-500'}`}>
+                            {posText}
+                          </td>
+                          <td className="p-3 font-black text-white">#{item.competitor.dorsal}</td>
+                          <td className="p-3 font-bold text-white">{item.competitor.name}</td>
+                          <td className="p-3 text-zinc-300">{item.competitor.category}</td>
+                          
+                          {/* Celdas de Bloques */}
+                          {problems.map((prob) => {
+                            const scoreKey = `${item.competitor.id}_${prob.id}`;
+                            const score = ws.state?.scores[scoreKey];
+                            
+                            let cellText = '-';
+                            let cellColorClass = 'text-zinc-600';
+
+                            if (score) {
+                              if (score.gotTop) {
+                                cellText = `T${score.topAttempt || score.attempts}`;
+                                if (score.gotZone) {
+                                  cellText += ` z${score.zoneAttempt || score.attempts}`;
+                                }
+                                cellColorClass = 'text-[#EC4899] font-black';
+                              } else if (score.gotZone) {
+                                cellText = `z${score.zoneAttempt || score.attempts}`;
+                                cellColorClass = 'text-[#FACC15] font-bold';
+                              } else if (score.attempts > 0) {
+                                cellText = `A${score.attempts}`;
+                                cellColorClass = 'text-zinc-400';
+                              }
+                            }
+
+                            return (
+                              <td key={prob.id} className={`p-3 text-center ${cellColorClass}`}>
+                                {cellText}
+                              </td>
+                            );
+                          })}
+
+                          {/* Totales */}
+                          {isCustom ? (
+                            <td className="p-3 text-center font-black text-[#EC4899] text-base">
+                              {item.customScore.toFixed(1)}
+                            </td>
+                          ) : (
+                            <>
+                              <td className="p-3 text-center font-black text-[#EC4899] text-base">
+                                {item.totalTops}
+                              </td>
+                              <td className="p-3 text-center font-black text-[#FACC15] text-base">
+                                {item.totalZones}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1525,6 +1831,14 @@ export default function App() {
                       onClick={() => {
                         setBgTheme('pachamama');
                         setCompetitionLogo((prev) => ({ ...prev, type: 'pachamama' }));
+                        if (ws.connected && ws.state) {
+                          ws.updateConfig({
+                            competition: {
+                              ...ws.state.competition,
+                              bgTheme: 'pachamama'
+                            }
+                          });
+                        }
                       }}
                       className={`p-5 rounded-2xl border transition text-left cursor-pointer flex flex-col justify-between gap-4 ${
                         bgTheme === 'pachamama'
@@ -1557,6 +1871,14 @@ export default function App() {
                       onClick={() => {
                         setBgTheme('cijel');
                         setCompetitionLogo((prev) => ({ ...prev, type: 'cijel' }));
+                        if (ws.connected && ws.state) {
+                          ws.updateConfig({
+                            competition: {
+                              ...ws.state.competition,
+                              bgTheme: 'cijel'
+                            }
+                          });
+                        }
                       }}
                       className={`p-5 rounded-2xl border transition text-left cursor-pointer flex flex-col justify-between gap-4 ${
                         bgTheme === 'cijel'
@@ -1583,6 +1905,73 @@ export default function App() {
                         <span className="w-5 h-5 rounded-full bg-[#FACC15] shadow-sm" title="Amarillo CIJEL" />
                       </div>
                     </button>
+                  </div>
+
+                  {/* OPACIDAD DEL FONDO DE PANTALLA */}
+                  <div className="mt-6 pt-6 border-t border-[#2d303a] space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <span className="text-xs font-bold text-zinc-300 block">
+                          Opacidad del Fondo de Pantalla ({bgTheme === 'cijel' ? 'Wallpaper Estelar' : 'Logo Gigante'})
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                          Ajusta la intensidad de la imagen de fondo para que no interfiera con los textos. Se sincroniza en vivo en el proyector.
+                        </span>
+                      </div>
+                      <span className="px-3 py-1 bg-[#EC4899]/20 border border-[#EC4899] text-[#EC4899] rounded-xl text-xs font-mono font-black shrink-0">
+                        {bgOpacity}%
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={bgOpacity}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setBgOpacity(val);
+                          if (ws.connected && ws.state) {
+                            ws.updateConfig({
+                              competition: {
+                                ...ws.state.competition,
+                                bgOpacity: val
+                              }
+                            });
+                          }
+                        }}
+                        className="w-full accent-[#EC4899] cursor-pointer h-2 bg-zinc-800 rounded-lg appearance-none"
+                      />
+
+                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                        {[5, 10, 20, 30, 45, 60, 80, 100].map((opacityVal) => (
+                          <button
+                            key={opacityVal}
+                            type="button"
+                            onClick={() => {
+                              setBgOpacity(opacityVal);
+                              if (ws.connected && ws.state) {
+                                ws.updateConfig({
+                                  competition: {
+                                    ...ws.state.competition,
+                                    bgOpacity: opacityVal
+                                  }
+                                });
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                              bgOpacity === opacityVal
+                                ? 'bg-[#EC4899] text-white shadow-md'
+                                : 'bg-white/5 text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {opacityVal}%
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* LOGOTIPO PERSONALIZADO DE LA COMPETENCIA */}
@@ -1758,10 +2147,11 @@ export default function App() {
 
                       {/* HEIGHT / ADAPT SIZE TO CARD (WITH RANGE SLIDER & INSTANT REAL-TIME UPDATE) */}
                       <div className="space-y-3 pt-3 border-t border-white/10">
+                        {/* CONTROL 1: Altura en Card Principal */}
                         <div className="flex items-center justify-between gap-4">
                           <div>
                             <span className="text-xs font-bold text-zinc-300 block">
-                              Tamaño de la Imagen (Altura en Pixeles)
+                              Tamaño de la Imagen en Banner (Altura)
                             </span>
                             <span className="text-[11px] text-zinc-400">
                               Cambio automático en tiempo real en la pantalla y la vista pública.
@@ -1772,7 +2162,7 @@ export default function App() {
                           </span>
                         </div>
 
-                        {/* SLIDER & PRESETS */}
+                        {/* SLIDER & PRESETS BANNER */}
                         <div className="flex flex-col sm:flex-row items-center gap-4">
                           <input
                             type="range"
@@ -1795,6 +2185,55 @@ export default function App() {
                                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                                   (competitionLogo.maxHeightPx || 80) === h
                                     ? 'bg-[#38BDF8] text-black shadow-md'
+                                    : 'bg-white/5 text-zinc-400 hover:text-white'
+                                }`}
+                              >
+                                {h}px
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-3 border-t border-white/10">
+                        {/* CONTROL 2: Altura en Barra Superior (Header) */}
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <span className="text-xs font-bold text-zinc-300 block">
+                              Tamaño del Logo en la Barra Superior (Header)
+                            </span>
+                            <span className="text-[11px] text-zinc-400">
+                              Cambio automático en la cabecera del panel de control de la app.
+                            </span>
+                          </div>
+                          <span className="px-3 py-1 bg-[#1AA0E6]/20 border border-[#1AA0E6] text-[#1AA0E6] rounded-xl text-xs font-mono font-black shrink-0">
+                            {competitionLogo.headerMaxHeightPx || 60} px
+                          </span>
+                        </div>
+
+                        {/* SLIDER & PRESETS HEADER */}
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                          <input
+                            type="range"
+                            min="24"
+                            max="120"
+                            step="2"
+                            value={competitionLogo.headerMaxHeightPx || 60}
+                            onChange={(e) =>
+                              setCompetitionLogo({ ...competitionLogo, headerMaxHeightPx: Number(e.target.value) })
+                            }
+                            className="w-full accent-[#1AA0E6] cursor-pointer h-2 bg-zinc-800 rounded-lg appearance-none"
+                          />
+
+                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                            {[24, 32, 42, 60, 80, 100].map((h) => (
+                              <button
+                                key={h}
+                                type="button"
+                                onClick={() => setCompetitionLogo({ ...competitionLogo, headerMaxHeightPx: h })}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                                  (competitionLogo.headerMaxHeightPx || 60) === h
+                                    ? 'bg-[#1AA0E6] text-white shadow-md'
                                     : 'bg-white/5 text-zinc-400 hover:text-white'
                                 }`}
                               >
