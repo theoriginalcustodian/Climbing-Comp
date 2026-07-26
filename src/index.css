@@ -1,0 +1,292 @@
+@import "tailwindcss";
+
+@layer utilities {
+  /* Glassmorphism Esmerilado Translúcido Cards */
+  .pachamama-card {
+    background-color: rgba(22, 24, 32, 0.60);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 
+      0 20px 40px -10px rgba(0, 0, 0, 0.75),
+      0 8px 16px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .pachamama-card-hover {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pachamama-card-hover:hover {
+    transform: translateY(-3px);
+    background-color: rgba(30, 35, 50, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: rgba(255, 255, 255, 0.30);
+    box-shadow: 
+      0 24px 48px -12px rgba(0, 0, 0, 0.90),
+      0 10px 20px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  /* Recessed Display Inset Panel */
+  .pachamama-inset {
+    background-color: rgba(10, 11, 16, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.90), 0 1px 0 rgba(255, 255, 255, 0.10);
+  }
+
+  /* 🌌 CIJEL 2026 THEME OVERRIDES (COSMIC ELECTRIC PALETTE) */
+  .theme-cijel .pachamama-card {
+    background: linear-gradient(135deg, rgba(16, 22, 45, 0.90) 0%, rgba(10, 14, 32, 0.82) 100%);
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: 
+      0 20px 50px rgba(0, 0, 0, 0.90),
+      0 0 25px rgba(56, 189, 248, 0.20);
+  }
+
+  .theme-cijel .pachamama-inset {
+    background-color: rgba(8, 12, 28, 0.92);
+    border-color: rgba(236, 72, 153, 0.35);
+    box-shadow: 
+      inset 0 4px 20px rgba(0, 0, 0, 0.95),
+      0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  /* 🟢 Start / Reanudar (Green Button) -> Electric Cyan / Neon Blue in CIJEL */
+  .theme-cijel .pachamama-btn-green {
+    background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+    border: 1px solid #38BDF8;
+    box-shadow: 
+      0 4px 18px rgba(6, 182, 212, 0.50),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    font-weight: 900;
+  }
+  .theme-cijel .pachamama-btn-green:hover {
+    background: linear-gradient(135deg, #38BDF8 0%, #6366F1 100%);
+    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.65);
+    transform: translateY(-2px);
+  }
+
+  /* 🟡 Pause / Zone / Active Dorsal (Ochre Button) -> Golden Amber in CIJEL */
+  .theme-cijel .pachamama-btn-ochre {
+    background: linear-gradient(135deg, #F59E0B 0%, #EAB308 100%);
+    border: 1px solid #FACC15;
+    box-shadow: 
+      0 4px 18px rgba(245, 158, 11, 0.50),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    font-weight: 900;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  }
+  .theme-cijel .pachamama-btn-ochre:hover {
+    background: linear-gradient(135deg, #FBBF24 0%, #FACC15 100%);
+    box-shadow: 0 8px 24px rgba(250, 204, 21, 0.65);
+    transform: translateY(-2px);
+  }
+
+  /* 🔴 Reset / Stop / Top (Terracotta Button) -> Electric Hot Pink in CIJEL */
+  .theme-cijel .pachamama-btn-terracotta {
+    background: linear-gradient(135deg, #EC4899 0%, #E11D48 100%);
+    border: 1px solid #F472B6;
+    box-shadow: 
+      0 4px 18px rgba(236, 72, 153, 0.50),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    font-weight: 900;
+  }
+  .theme-cijel .pachamama-btn-terracotta:hover {
+    background: linear-gradient(135deg, #F472B6 0%, #F43F5E 100%);
+    box-shadow: 0 8px 24px rgba(236, 72, 153, 0.65);
+    transform: translateY(-2px);
+  }
+
+  /* 🔵 Blue Button (Skip / Nav) -> Electric Violet in CIJEL */
+  .theme-cijel .pachamama-btn-blue {
+    background: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);
+    border: 1px solid #A78BFA;
+    box-shadow: 
+      0 4px 18px rgba(139, 92, 246, 0.50),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    font-weight: 900;
+  }
+  .theme-cijel .pachamama-btn-blue:hover {
+    background: linear-gradient(135deg, #A78BFA 0%, #38BDF8 100%);
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.65);
+    transform: translateY(-2px);
+  }
+
+  /* Dark Controls in CIJEL mode */
+  .theme-cijel .pachamama-btn-dark {
+    background: linear-gradient(135deg, rgba(26, 32, 54, 0.90) 0%, rgba(16, 20, 36, 0.85) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.40);
+    color: #f1f5f9;
+  }
+  .theme-cijel .pachamama-btn-dark:hover {
+    background: linear-gradient(135deg, rgba(40, 50, 80, 0.95) 0%, rgba(24, 30, 54, 0.90) 100%);
+    border-color: rgba(236, 72, 153, 0.60);
+    color: #ffffff;
+  }
+
+  /* 🏔️ VIBRANT PACHAMAMA LOGO BUTTON COLORS */
+
+  /* 🔴 Terracotta / Red Logo Color (#EF4444) - RESET / STOP / TOP */
+  .pachamama-btn-terracotta {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: #ffffff;
+    border: 1px solid #F87171;
+    box-shadow: 
+      0 4px 18px rgba(239, 68, 68, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    transition: all 0.2s ease;
+    font-weight: 900;
+  }
+  .pachamama-btn-terracotta:hover {
+    background: linear-gradient(135deg, #F87171 0%, #EF4444 100%);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.60);
+    transform: translateY(-2px);
+  }
+  .pachamama-btn-terracotta:active {
+    transform: translateY(1px);
+    background: #B91C1C;
+  }
+
+  /* 🟡 Gold / Ochre Logo Color (#F59E0B) - PAUSE / DORSAL / ZONE */
+  .pachamama-btn-ochre {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    border: 1px solid #FBBF24;
+    box-shadow: 
+      0 4px 18px rgba(245, 158, 11, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    transition: all 0.2s ease;
+    font-weight: 900;
+  }
+  .pachamama-btn-ochre:hover {
+    background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.60);
+    transform: translateY(-2px);
+  }
+  .pachamama-btn-ochre:active {
+    transform: translateY(1px);
+    background: #B45309;
+  }
+
+  /* 🔵 Sky Blue Logo Color (#0284C7) - SALTAR / FORMS / NAV */
+  .pachamama-btn-blue {
+    background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+    color: #ffffff;
+    border: 1px solid #7DD3FC;
+    box-shadow: 
+      0 4px 18px rgba(2, 132, 199, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    transition: all 0.2s ease;
+    font-weight: 900;
+  }
+  .pachamama-btn-blue:hover {
+    background: linear-gradient(135deg, #7DD3FC 0%, #38BDF8 100%);
+    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.60);
+    transform: translateY(-2px);
+  }
+  .pachamama-btn-blue:active {
+    transform: translateY(1px);
+    background: #0369A1;
+  }
+
+  /* 🟢 Emerald Green Logo Color (#10B981) - INICIAR / REANUDAR */
+  .pachamama-btn-green {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: #ffffff;
+    border: 1px solid #34D399;
+    box-shadow: 
+      0 4px 18px rgba(16, 185, 129, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    transition: all 0.2s ease;
+    font-weight: 900;
+  }
+  .pachamama-btn-green:hover {
+    background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.60);
+    transform: translateY(-2px);
+  }
+  .pachamama-btn-green:active {
+    transform: translateY(1px);
+    background: #047857;
+  }
+
+  /* ⚪ Neutral Dark Glass Button */
+  .pachamama-btn-dark {
+    background: linear-gradient(135deg, rgba(35, 40, 55, 0.85) 0%, rgba(20, 24, 34, 0.75) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #f4f4f5;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.60);
+    transition: all 0.2s ease;
+    font-weight: 700;
+  }
+  .pachamama-btn-dark:hover {
+    background: linear-gradient(135deg, rgba(50, 58, 80, 0.92) 0%, rgba(28, 34, 48, 0.85) 100%);
+    border-color: rgba(255, 255, 255, 0.30);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+}
+
+/* 🌊 CUSTOM GLASSMORPHISM SCROLLBARS */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(12, 14, 20, 0.65);
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.40);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.60);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(232, 168, 67, 0.45) 0%, rgba(26, 160, 230, 0.35) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.50);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.60);
+  transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(232, 168, 67, 0.75) 0%, rgba(26, 160, 230, 0.65) 100%);
+  border-color: rgba(0, 0, 0, 0.70);
+  box-shadow: 0 0 12px rgba(232, 168, 67, 0.4);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, rgba(222, 123, 123, 0.85) 0%, rgba(232, 168, 67, 0.75) 100%);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 168, 67, 0.5) rgba(12, 14, 20, 0.65);
+}
+
+body {
+  background-color: #0d0e12;
+  color: #f4f4f5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow-x: hidden;
+}

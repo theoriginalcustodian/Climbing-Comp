@@ -1,0 +1,6 @@
+{
+  "name": "Pachamama Escalada",
+  "description": "App de gestión de competencias de escalada Boulder para Pachamama Escalada con panel de control táctil de alto relieve y vista pública.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
