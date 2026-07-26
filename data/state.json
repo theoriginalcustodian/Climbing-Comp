@@ -1,0 +1,115 @@
+{
+  "competition": {
+    "id": "comp-default",
+    "name": "Competencia de Prueba",
+    "date": "2026-07-25",
+    "location": "Gimnasio Local",
+    "status": "draft",
+    "rules": {
+      "scoringType": "custom",
+      "rotationFormat": "circuit",
+      "language": "es"
+    },
+    "timerConfig": {
+      "prepTime": 10,
+      "climbTime": 40,
+      "pauseTime": 10,
+      "preEndWarning": 5,
+      "preStartWarning": 3
+    },
+    "customScoringConfig": {
+      "pointsTop": 25,
+      "pointsZone": 10,
+      "pointsPenalty": -0.1
+    },
+    "bgOpacity": 10
+  },
+  "categories": [
+    {
+      "id": "cat-juvenil",
+      "name": "Juvenil",
+      "sortOrder": 1
+    },
+    {
+      "id": "cat-senior",
+      "name": "Senior",
+      "sortOrder": 2
+    },
+    {
+      "id": "cat-elite",
+      "name": "Elite",
+      "sortOrder": 3
+    }
+  ],
+  "competitors": [
+    {
+      "id": "comp-1",
+      "name": "María García",
+      "dorsal": "14",
+      "categoryId": "cat-elite",
+      "club": "Club Andino",
+      "startOrder": 1
+    },
+    {
+      "id": "comp-2",
+      "name": "Pedro López",
+      "dorsal": "7",
+      "categoryId": "cat-elite",
+      "club": "Vertical",
+      "startOrder": 2
+    },
+    {
+      "id": "comp-3",
+      "name": "Ana Ruiz",
+      "dorsal": "22",
+      "categoryId": "cat-senior",
+      "club": "Summit",
+      "startOrder": 3
+    }
+  ],
+  "problems": [
+    {
+      "id": "prob-1",
+      "name": "Bloque 1",
+      "problemNumber": 1,
+      "grade": "V3",
+      "holdColor": "Rojo",
+      "hasZone": true
+    },
+    {
+      "id": "prob-2",
+      "name": "Bloque 2",
+      "problemNumber": 2,
+      "grade": "V4",
+      "holdColor": "Azul",
+      "hasZone": true
+    },
+    {
+      "id": "prob-3",
+      "name": "Bloque 3",
+      "problemNumber": 3,
+      "grade": "V5",
+      "holdColor": "Verde",
+      "hasZone": true
+    }
+  ],
+  "scores": {
+    "comp-1_prob-3": {
+      "competitorId": "comp-1",
+      "problemId": "prob-3",
+      "attempts": 1,
+      "gotTop": true,
+      "gotZone": true,
+      "topAttempt": 1,
+      "zoneAttempt": 1,
+      "timestamp": "2026-07-25T21:04:29.012Z"
+    }
+  },
+  "timerState": {
+    "running": false,
+    "phase": "idle",
+    "remaining": 40,
+    "elapsed": 0,
+    "activeProblemIndex": 0
+  }
+}

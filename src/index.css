@@ -3,9 +3,9 @@
 @layer utilities {
   /* Glassmorphism Esmerilado Translúcido Cards */
   .pachamama-card {
-    background-color: rgba(22, 24, 32, 0.60);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background-color: rgba(12, 14, 18, 0.98);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-top: 1px solid rgba(255, 255, 255, 0.22);
     box-shadow: 
@@ -20,9 +20,9 @@
 
   .pachamama-card-hover:hover {
     transform: translateY(-3px);
-    background-color: rgba(30, 35, 50, 0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background-color: rgba(22, 26, 36, 0.99);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
     border-color: rgba(255, 255, 255, 0.30);
     box-shadow: 
       0 24px 48px -12px rgba(0, 0, 0, 0.90),
@@ -32,16 +32,16 @@
 
   /* Recessed Display Inset Panel */
   .pachamama-inset {
-    background-color: rgba(10, 11, 16, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background-color: rgba(8, 9, 12, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.90), 0 1px 0 rgba(255, 255, 255, 0.10);
   }
 
   /* 🌌 CIJEL 2026 THEME OVERRIDES (COSMIC ELECTRIC PALETTE) */
   .theme-cijel .pachamama-card {
-    background: linear-gradient(135deg, rgba(16, 22, 45, 0.90) 0%, rgba(10, 14, 32, 0.82) 100%);
+    background: linear-gradient(135deg, rgba(8, 11, 24, 0.99) 0%, rgba(5, 7, 16, 0.97) 100%);
     border-color: rgba(56, 189, 248, 0.35);
     box-shadow: 
       0 20px 50px rgba(0, 0, 0, 0.90),

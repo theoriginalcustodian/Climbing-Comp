@@ -8,6 +8,7 @@ export interface CompetitionLogoConfig {
   featherEdges: boolean;
   featherIntensity: 'soft' | 'medium' | 'strong';
   maxHeightPx?: number;
+  headerMaxHeightPx?: number;
 }
 
 interface CompetitionLogoBannerProps {
