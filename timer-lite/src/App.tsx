@@ -79,7 +79,7 @@ export default function App() {
           return;
         case 'countdown_tick':
           if (audioConf.countdownTickAudio === 'none') return;
-          if (audioConf.countdownTickAudio) soundEngine.playEventAudio(audioConf.countdownTickAudio, 'chime');
+          if (audioConf.countdownTickAudio) soundEngine.playEventAudio(audioConf.countdownTickAudio, 'tick');
           else soundEngine.playTick(); // Tick fallback
           return;
       }

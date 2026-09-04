@@ -43,7 +43,7 @@ export const TimerConfigPanel: React.FC<TimerConfigPanelProps> = ({ timerConfig,
     });
   };
 
-  const testAudio = (audioUrl?: string, defaultType: 'horn' | 'prep' | 'chime' = 'horn') => {
+  const testAudio = (audioUrl?: string, defaultType: 'horn' | 'prep' | 'chime' | 'tick' = 'horn') => {
     soundEngine.playEventAudio(audioUrl, defaultType);
   };
 
@@ -58,7 +58,7 @@ export const TimerConfigPanel: React.FC<TimerConfigPanelProps> = ({ timerConfig,
     { id: 'custom1', title: '🔔 Alerta Custom 1', desc: 'Suena en el tiempo configurado.', key: 'customAlert1Audio', nameKey: 'customAlert1AudioName', defaultType: 'chime' },
     { id: 'custom2', title: '🔔 Alerta Custom 2', desc: 'Suena en el tiempo configurado.', key: 'customAlert2Audio', nameKey: 'customAlert2AudioName', defaultType: 'chime' },
     { id: 'custom3', title: '🔔 Alerta Custom 3', desc: 'Suena en el tiempo configurado.', key: 'customAlert3Audio', nameKey: 'customAlert3AudioName', defaultType: 'chime' },
-    { id: 'countdownTick', title: '⏱️ Latido Últimos Segundos', desc: 'Suena cada segundo al final.', key: 'countdownTickAudio', nameKey: 'countdownTickAudioName', defaultType: 'chime' },
+    { id: 'countdownTick', title: '⏱️ Latido Últimos Segundos', desc: 'Suena cada segundo al final.', key: 'countdownTickAudio', nameKey: 'countdownTickAudioName', defaultType: 'tick' },
   ] as const;
 
   return (

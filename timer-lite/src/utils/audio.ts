@@ -63,7 +63,7 @@ class SoundEngine {
     setTimeout(() => this.playHorn(1.0, 220), 1200);
   }
 
-  playEventAudio(url: string | undefined, defaultType: 'horn' | 'prep' | 'chime' = 'horn') {
+  playEventAudio(url: string | undefined, defaultType: 'horn' | 'prep' | 'chime' | 'tick' = 'horn') {
     if (url && url !== 'none') {
       const audio = new Audio(url);
       audio.play().catch(() => this.playFallback(defaultType));
@@ -72,10 +72,11 @@ class SoundEngine {
     }
   }
 
-  private playFallback(type: 'horn' | 'prep' | 'chime') {
+  private playFallback(type: 'horn' | 'prep' | 'chime' | 'tick') {
     if (type === 'horn') this.playHorn();
     else if (type === 'prep') this.playPrepBeep();
     else if (type === 'chime') this.playWarningBeep();
+    else if (type === 'tick') this.playTick();
   }
 
   playTick() {
