@@ -20,7 +20,14 @@ let state = {
     enablePause: true,
     enablePrep: true,
     enablePreStart: true,
-    enablePreEnd: true
+    enablePreEnd: true,
+    customAlert1Time: 60,
+    customAlert2Time: 30,
+    customAlert3Time: 15,
+    enableCustomAlert1: false,
+    enableCustomAlert2: false,
+    enableCustomAlert3: false,
+    enableCountdownTick: false
   },
   timerState: {
     running: false,
@@ -88,9 +95,24 @@ function startTimerEngine() {
       state.timerState.elapsed++;
 
       // Alertas de sonido
-      if (state.timerConfig.enablePreEnd && state.timerState.remaining === state.timerConfig.preEndWarning && state.timerState.phase === 'climb') {
-        broadcast({ type: 'sound_trigger', sound: 'pre_end' });
+      if (state.timerState.phase === 'climb') {
+        if (state.timerConfig.enablePreEnd && state.timerState.remaining === state.timerConfig.preEndWarning) {
+          broadcast({ type: 'sound_trigger', sound: 'pre_end' });
+        }
+        if (state.timerConfig.enableCustomAlert1 && state.timerState.remaining === state.timerConfig.customAlert1Time) {
+          broadcast({ type: 'sound_trigger', sound: 'custom_1' });
+        }
+        if (state.timerConfig.enableCustomAlert2 && state.timerState.remaining === state.timerConfig.customAlert2Time) {
+          broadcast({ type: 'sound_trigger', sound: 'custom_2' });
+        }
+        if (state.timerConfig.enableCustomAlert3 && state.timerState.remaining === state.timerConfig.customAlert3Time) {
+          broadcast({ type: 'sound_trigger', sound: 'custom_3' });
+        }
+        if (state.timerConfig.enableCountdownTick && state.timerState.remaining <= state.timerConfig.preEndWarning && state.timerState.remaining > 0) {
+          broadcast({ type: 'sound_trigger', sound: 'countdown_tick' });
+        }
       }
+
       if (state.timerConfig.enablePreStart && state.timerState.remaining === state.timerConfig.preStartWarning && state.timerState.phase === 'prep') {
         broadcast({ type: 'sound_trigger', sound: 'pre_start' });
       }

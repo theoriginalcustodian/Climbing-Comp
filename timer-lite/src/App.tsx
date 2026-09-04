@@ -62,6 +62,26 @@ export default function App() {
             soundEngine.playWarningBeep();
           }
           return; 
+        case 'custom_1':
+          if (audioConf.customAlert1Audio === 'none') return;
+          if (audioConf.customAlert1Audio) soundEngine.playEventAudio(audioConf.customAlert1Audio, 'chime');
+          else soundEngine.playWarningBeep();
+          return;
+        case 'custom_2':
+          if (audioConf.customAlert2Audio === 'none') return;
+          if (audioConf.customAlert2Audio) soundEngine.playEventAudio(audioConf.customAlert2Audio, 'chime');
+          else soundEngine.playWarningBeep();
+          return;
+        case 'custom_3':
+          if (audioConf.customAlert3Audio === 'none') return;
+          if (audioConf.customAlert3Audio) soundEngine.playEventAudio(audioConf.customAlert3Audio, 'chime');
+          else soundEngine.playWarningBeep();
+          return;
+        case 'countdown_tick':
+          if (audioConf.countdownTickAudio === 'none') return;
+          if (audioConf.countdownTickAudio) soundEngine.playEventAudio(audioConf.countdownTickAudio, 'chime');
+          else soundEngine.playTick(); // Tick fallback
+          return;
       }
 
       if (customUrl === 'none') return; // Skipped

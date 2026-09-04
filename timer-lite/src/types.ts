@@ -15,6 +15,14 @@ export interface TimerAudioConfig {
   prepEndAudioName?: string;
   preEndWarningAudio?: string;
   preEndWarningAudioName?: string;
+  customAlert1Audio?: string;
+  customAlert1AudioName?: string;
+  customAlert2Audio?: string;
+  customAlert2AudioName?: string;
+  customAlert3Audio?: string;
+  customAlert3AudioName?: string;
+  countdownTickAudio?: string;
+  countdownTickAudioName?: string;
 }
 
 export interface CompetitionLogoConfig {
@@ -38,6 +46,13 @@ export interface TimerConfig {
   enablePrep: boolean;
   enablePreStart: boolean;
   enablePreEnd: boolean;
+  customAlert1Time: number;
+  customAlert2Time: number;
+  customAlert3Time: number;
+  enableCustomAlert1: boolean;
+  enableCustomAlert2: boolean;
+  enableCustomAlert3: boolean;
+  enableCountdownTick: boolean;
 }
 
 export interface TimerState {

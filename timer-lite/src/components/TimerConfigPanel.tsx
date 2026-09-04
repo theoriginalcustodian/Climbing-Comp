@@ -55,6 +55,10 @@ export const TimerConfigPanel: React.FC<TimerConfigPanelProps> = ({ timerConfig,
     { id: 'prepStart', title: '🔵 Inicio de Preparación', desc: 'Suena cuando comienza la preparación.', key: 'prepStartAudio', nameKey: 'prepStartAudioName', defaultType: 'prep' },
     { id: 'prepEnd', title: '🟡 Fin de Preparación', desc: 'Suena cuando finaliza la preparación.', key: 'prepEndAudio', nameKey: 'prepEndAudioName', defaultType: 'horn' },
     { id: 'preEnd', title: '🔴 Alerta Últimos Segundos', desc: 'Suena en los últimos segundos de escalada.', key: 'preEndWarningAudio', nameKey: 'preEndWarningAudioName', defaultType: 'chime' },
+    { id: 'custom1', title: '🔔 Alerta Custom 1', desc: 'Suena en el tiempo configurado.', key: 'customAlert1Audio', nameKey: 'customAlert1AudioName', defaultType: 'chime' },
+    { id: 'custom2', title: '🔔 Alerta Custom 2', desc: 'Suena en el tiempo configurado.', key: 'customAlert2Audio', nameKey: 'customAlert2AudioName', defaultType: 'chime' },
+    { id: 'custom3', title: '🔔 Alerta Custom 3', desc: 'Suena en el tiempo configurado.', key: 'customAlert3Audio', nameKey: 'customAlert3AudioName', defaultType: 'chime' },
+    { id: 'countdownTick', title: '⏱️ Latido Últimos Segundos', desc: 'Suena cada segundo al final.', key: 'countdownTickAudio', nameKey: 'countdownTickAudioName', defaultType: 'chime' },
   ] as const;
 
   return (
@@ -70,6 +74,9 @@ export const TimerConfigPanel: React.FC<TimerConfigPanelProps> = ({ timerConfig,
           <TimeField label="Tiempo de Preparación" value={timerConfig.prepTime} onChange={v => pushConfig({ prepTime: v })} />
           <TimeField label="Alerta Pre-Fin" value={timerConfig.preEndWarning} onChange={v => pushConfig({ preEndWarning: v })} />
           <TimeField label="Alerta Pre-Inicio" value={timerConfig.preStartWarning} onChange={v => pushConfig({ preStartWarning: v })} />
+          <TimeField label="Alerta Custom 1" value={timerConfig.customAlert1Time ?? 60} onChange={v => pushConfig({ customAlert1Time: v })} />
+          <TimeField label="Alerta Custom 2" value={timerConfig.customAlert2Time ?? 30} onChange={v => pushConfig({ customAlert2Time: v })} />
+          <TimeField label="Alerta Custom 3" value={timerConfig.customAlert3Time ?? 15} onChange={v => pushConfig({ customAlert3Time: v })} />
         </div>
         
         <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
@@ -92,6 +99,22 @@ export const TimerConfigPanel: React.FC<TimerConfigPanelProps> = ({ timerConfig,
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#d4d4d8', cursor: 'pointer' }}>
             <input type="checkbox" checked={timerConfig.enablePreEnd ?? true} onChange={e => pushConfig({ enablePreEnd: e.target.checked })} />
             Habilitar Alerta Últimos Segundos
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#d4d4d8', cursor: 'pointer' }}>
+            <input type="checkbox" checked={timerConfig.enableCustomAlert1 ?? false} onChange={e => pushConfig({ enableCustomAlert1: e.target.checked })} />
+            Habilitar Alerta Custom 1
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#d4d4d8', cursor: 'pointer' }}>
+            <input type="checkbox" checked={timerConfig.enableCustomAlert2 ?? false} onChange={e => pushConfig({ enableCustomAlert2: e.target.checked })} />
+            Habilitar Alerta Custom 2
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#d4d4d8', cursor: 'pointer' }}>
+            <input type="checkbox" checked={timerConfig.enableCustomAlert3 ?? false} onChange={e => pushConfig({ enableCustomAlert3: e.target.checked })} />
+            Habilitar Alerta Custom 3
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#d4d4d8', cursor: 'pointer' }}>
+            <input type="checkbox" checked={timerConfig.enableCountdownTick ?? false} onChange={e => pushConfig({ enableCountdownTick: e.target.checked })} />
+            Habilitar Latido Últimos Segundos
           </label>
         </div>
       </div>
