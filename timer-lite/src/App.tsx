@@ -132,13 +132,13 @@ export default function App() {
           <div className="phase-badge" style={{ ...phaseInfo.badgeStyle, marginBottom: 40 }}>{phaseInfo.label}</div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, userSelect: 'none', marginBottom: 60 }}>
-            <span className="timer-glow" style={{ fontSize: 'clamp(8rem, 15vw, 12rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: phaseInfo.color }}>
+            <span style={{ fontSize: 'clamp(8rem, 15vw, 12rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: '#ffffff', textShadow: `0 0 40px ${phaseInfo.color}, 0 0 80px ${phaseInfo.color}` }}>
               {mm}
             </span>
-            <span style={{ fontSize: 'clamp(4rem, 8vw, 8rem)', fontWeight: 900, color: phaseInfo.color, opacity: timerState.running ? undefined : 0.6, animation: timerState.running ? 'pulse-warning 1s infinite' : 'none' }}>
+            <span style={{ fontSize: 'clamp(4rem, 8vw, 8rem)', fontWeight: 900, color: '#ffffff', textShadow: `0 0 40px ${phaseInfo.color}`, opacity: timerState.running ? undefined : 0.6, animation: timerState.running ? 'pulse-warning 1s infinite' : 'none' }}>
               :
             </span>
-            <span className="timer-glow" style={{ fontSize: 'clamp(8rem, 15vw, 12rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: phaseInfo.color }}>
+            <span style={{ fontSize: 'clamp(8rem, 15vw, 12rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: '#ffffff', textShadow: `0 0 40px ${phaseInfo.color}, 0 0 80px ${phaseInfo.color}` }}>
               {ss}
             </span>
           </div>
@@ -249,11 +249,11 @@ function PublicTimerView({ timerState, timerConfig, bgTheme, bgOpacity, logoConf
 
       {/* Giant Timer */}
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'baseline', gap: 16, userSelect: 'none' }}>
-        <span className="timer-glow" style={{ fontSize: 'clamp(10rem, 30vw, 28rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: phaseInfo.color }}>
+        <span style={{ fontSize: 'clamp(10rem, 30vw, 28rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: '#ffffff', textShadow: `0 0 40px ${phaseInfo.color}, 0 0 80px ${phaseInfo.color}` }}>
           {mm}
         </span>
-        <span style={{ fontSize: 'clamp(5rem, 12vw, 12rem)', fontWeight: 900, color: phaseInfo.color }}>:</span>
-        <span className="timer-glow" style={{ fontSize: 'clamp(10rem, 30vw, 28rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: phaseInfo.color }}>
+        <span style={{ fontSize: 'clamp(5rem, 12vw, 12rem)', fontWeight: 900, color: '#ffffff', textShadow: `0 0 40px ${phaseInfo.color}` }}>:</span>
+        <span style={{ fontSize: 'clamp(10rem, 30vw, 28rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, letterSpacing: '-0.04em', color: '#ffffff', textShadow: `0 0 40px ${phaseInfo.color}, 0 0 80px ${phaseInfo.color}` }}>
           {ss}
         </span>
       </div>
