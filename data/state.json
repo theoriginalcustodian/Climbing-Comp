@@ -22,7 +22,8 @@
       "pointsZone": 10,
       "pointsPenalty": -0.1
     },
-    "bgOpacity": 10
+    "bgOpacity": 10,
+    "bgTheme": "cijel"
   },
   "categories": [
     {
