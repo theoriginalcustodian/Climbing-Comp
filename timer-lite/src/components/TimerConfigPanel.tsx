@@ -77,6 +77,7 @@ export const TimerConfigPanel: React.FC<TimerConfigPanelProps> = ({ timerConfig,
           <TimeField label="Alerta Custom 1" value={timerConfig.customAlert1Time ?? 60} onChange={v => pushConfig({ customAlert1Time: v })} />
           <TimeField label="Alerta Custom 2" value={timerConfig.customAlert2Time ?? 30} onChange={v => pushConfig({ customAlert2Time: v })} />
           <TimeField label="Alerta Custom 3" value={timerConfig.customAlert3Time ?? 15} onChange={v => pushConfig({ customAlert3Time: v })} />
+          <TimeField label="Latido (Inicio)" value={timerConfig.countdownTickTime ?? 10} onChange={v => pushConfig({ countdownTickTime: v })} />
         </div>
         
         <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>

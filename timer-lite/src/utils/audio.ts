@@ -62,6 +62,38 @@ class SoundEngine {
     setTimeout(() => this.playHorn(0.5, 330), 600);
     setTimeout(() => this.playHorn(1.0, 220), 1200);
   }
+
+  playEventAudio(url: string | undefined, defaultType: 'horn' | 'prep' | 'chime' = 'horn') {
+    if (url && url !== 'none') {
+      const audio = new Audio(url);
+      audio.play().catch(() => this.playFallback(defaultType));
+    } else {
+      this.playFallback(defaultType);
+    }
+  }
+
+  private playFallback(type: 'horn' | 'prep' | 'chime') {
+    if (type === 'horn') this.playHorn();
+    else if (type === 'prep') this.playPrepBeep();
+    else if (type === 'chime') this.playWarningBeep();
+  }
+
+  playTick() {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.05);
+    } catch { /* fallback */ }
+  }
 }
 
 export const soundEngine = new SoundEngine();

@@ -49,6 +49,7 @@ export interface TimerConfig {
   customAlert1Time: number;
   customAlert2Time: number;
   customAlert3Time: number;
+  countdownTickTime: number;
   enableCustomAlert1: boolean;
   enableCustomAlert2: boolean;
   enableCustomAlert3: boolean;

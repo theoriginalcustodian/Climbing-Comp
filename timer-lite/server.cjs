@@ -24,6 +24,7 @@ let state = {
     customAlert1Time: 60,
     customAlert2Time: 30,
     customAlert3Time: 15,
+    countdownTickTime: 10,
     enableCustomAlert1: false,
     enableCustomAlert2: false,
     enableCustomAlert3: false,
@@ -108,7 +109,7 @@ function startTimerEngine() {
         if (state.timerConfig.enableCustomAlert3 && state.timerState.remaining === state.timerConfig.customAlert3Time) {
           broadcast({ type: 'sound_trigger', sound: 'custom_3' });
         }
-        if (state.timerConfig.enableCountdownTick && state.timerState.remaining <= state.timerConfig.preEndWarning && state.timerState.remaining > 0) {
+        if (state.timerConfig.enableCountdownTick && state.timerState.remaining <= state.timerConfig.countdownTickTime && state.timerState.remaining > 0) {
           broadcast({ type: 'sound_trigger', sound: 'countdown_tick' });
         }
       }
