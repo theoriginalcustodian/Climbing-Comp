@@ -101,6 +101,8 @@ export default function App() {
     return (
       <MobileRemoteControl 
         timerState={timerState}
+        timerConfig={timerConfig}
+        pushConfig={pushConfig}
         startTimer={ws.startTimer}
         pauseTimer={ws.pauseTimer}
         resetTimer={ws.resetTimer}

@@ -1,9 +1,12 @@
-import React from 'react';
-import { Play, Pause, RotateCcw, SkipForward, Clock } from 'lucide-react';
-import { TimerState, TimerPhase } from '../types';
+import React, { useState } from 'react';
+import { Play, Pause, RotateCcw, SkipForward, Clock, Settings2, X } from 'lucide-react';
+import { TimerState, TimerPhase, TimerConfig } from '../types';
+import { TimerConfigPanel } from './TimerConfigPanel';
 
 interface MobileRemoteControlProps {
   timerState: TimerState;
+  timerConfig: TimerConfig;
+  pushConfig: (partial: Partial<TimerConfig>) => void;
   startTimer: () => void;
   pauseTimer: () => void;
   resetTimer: () => void;
@@ -12,12 +15,15 @@ interface MobileRemoteControlProps {
 
 export const MobileRemoteControl: React.FC<MobileRemoteControlProps> = ({
   timerState,
+  timerConfig,
+  pushConfig,
   startTimer,
   pauseTimer,
   resetTimer,
   nextPhase
 }) => {
   const { running, phase, remaining } = timerState;
+  const [showConfig, setShowConfig] = useState(false);
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -52,13 +58,37 @@ export const MobileRemoteControl: React.FC<MobileRemoteControlProps> = ({
       color: '#fff',
       padding: '20px',
       boxSizing: 'border-box',
-      fontFamily: 'system-ui, sans-serif'
+      fontFamily: 'system-ui, sans-serif',
+      overflowY: 'auto'
     }}>
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#38bdf8', margin: 0, textTransform: 'uppercase' }}>Timer Remote</h1>
-      </div>
+      {showConfig ? (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 900, color: '#38bdf8', margin: 0, textTransform: 'uppercase' }}>Configuración</h1>
+            <button 
+              onClick={() => setShowConfig(false)}
+              style={{ background: 'transparent', border: 'none', color: '#a1a1aa', padding: '8px' }}
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div style={{ flex: 1 }}>
+            <TimerConfigPanel timerConfig={timerConfig} pushConfig={pushConfig} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#38bdf8', margin: 0, textTransform: 'uppercase' }}>Timer Remote</h1>
+            <button 
+              onClick={() => setShowConfig(true)}
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '8px', borderRadius: '12px', display: 'flex' }}
+            >
+              <Settings2 size={24} />
+            </button>
+          </div>
 
-      <div style={{ 
+          <div style={{ 
         flex: 1, 
         display: 'flex', 
         flexDirection: 'column', 
@@ -135,6 +165,8 @@ export const MobileRemoteControl: React.FC<MobileRemoteControlProps> = ({
           <RotateCcw size={20} /> Reiniciar Todo
         </button>
       </div>
+        </>
+      )}
     </div>
   );
 };
