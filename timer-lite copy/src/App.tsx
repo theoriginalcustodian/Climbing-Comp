@@ -95,6 +95,10 @@ export default function App() {
     return () => window.removeEventListener('sound_trigger', handler);
   }, [isMuted, timerConfig.audio]);
 
+  const pushConfig = (partial: Partial<typeof timerConfig>) => {
+    ws.updateConfig({ timerConfig: { ...timerConfig, ...partial } });
+  };
+
   // Routing
   const path = window.location.pathname;
   if (path === '/remote') {
@@ -127,10 +131,6 @@ export default function App() {
   const mm = String(minutes).padStart(2, '0');
   const ss = String(seconds).padStart(2, '0');
   const phaseInfo = getPhaseInfo(timerState.phase, timerState.remaining, bgTheme, timerConfig);
-
-  const pushConfig = (partial: Partial<typeof timerConfig>) => {
-    ws.updateConfig({ timerConfig: { ...timerConfig, ...partial } });
-  };
 
   const openPublicView = () => {
     window.open('/public', '_blank', 'width=1280,height=720');
